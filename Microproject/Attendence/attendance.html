@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+  <title>Attendance</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div>
+<h1>Attendance</h1>
+</div>
+<div class="anything">
+    <button id="reset_all">Reset All</button>
+    <input id="name"><button id="add_counter">Add Subject</button>
+</div>
+
+<div id="subjects">
+</div>
+
+<div id="status"></div>
+ 
+<script>
+let subjects = {};
+var counter = new Array(4); //0-present 1-absent 2-total 3-percentage
+var st, text, x;
+ 
+function reset_all() {
+    document.getElementById('status').innerHTML = '';
+    subjects = {};
+    localStorage.removeItem('multi_counter');
+    show_counters();
+}
+ 
+function add_counter() {
+    let name = document.getElementById('name').value;
+    // remove spaces
+    name = name.replace(/^\s+/g, "");
+    name = name.replace(/\s+$/g, "");
+    if (name == "") {
+        document.getElementById('status').innerHTML = 'Missing name for new counter';
+        return;
+    }
+    // console.log(counters[name]);
+    if (name in subjects) {
+        document.getElementById('status').innerHTML = `subject '${name}' already exists`;
+        return;
+    }
+    counter[0] = 0;
+    counter[1] = 0; 
+    counter[2] = 0;
+    counter[3] = 0;
+    subjects[name] = counter;
+    localStorage.setItem('multi_counter', JSON.stringify(subjects));
+    document.getElementById('status').innerHTML = 'added';
+    document.getElementById('name').value = "";
+    window.location.reload();
+    show_counters();
+}
+
+function load_counters() {
+    let subjects_str = localStorage.getItem('multi_counter');
+    if (subjects_str === null) {
+        console.log('new multi counter system');
+    } else {
+        subjects = JSON.parse(subjects_str);
+    }
+    show_counters();
+}
+ 
+
+ 
+function show_counters() {
+    let subjects_list =  Object.keys(subjects);
+    console.log(subjects_list);
+    let html = "";
+    for (let ix = 0; ix < subjects_list.length; ix++) {
+        let name = subjects_list[ix];
+        if (subjects[name][3]>75)
+    {
+        st="#04fc43";
+        x = Math.floor((4*subjects[name][0] - 3*subjects[name][2])/3);
+        text=`On track, You may leave next ${x} classes`;
+    }
+    else if(subjects[name][3]==75)
+    {
+        st="#04fc43";
+        text=`On track`;
+    }
+    else if(subjects[name][3]==0)
+    {
+        text=` `;
+    }
+    else
+    {   
+        st="#fc0404";
+        x = 3*subjects[name][2] - 4*subjects[name][0];
+        text=`You need to attend ${x} classes to get back on track`;
+    }
+        html+=`<div class="container"><div class="card"><div class="percent" style="--clr:${st};--num:${subjects[name][3]}"><div class="dot"></div><svg><circle cx="70" cy="70" r="70"></circle><circle cx="70" cy="70" r="70"></circle></svg><div class="number"><h2>${subjects[name][3]}<span>%</span></h2><p>${name}</p></div><div class="present"><div class="buttons"><button class="counterp" data-name="${name}">Present : ${subjects[name][0]}</button> <button class="countera" data-name="${name}">Absent : ${subjects[name][1]}</button></div><p>${text}</p></div></div></div></div>`;
+        //html += `<h3>${name}</h3>${subjects[name][3]}%<button class="counterp" data-name="${name}">Present : ${subjects[name][0]}</button><button class="countera" data-name="${name}">Absent : ${subjects[name][1]}</button>`;
+    }
+    document.getElementById('subjects').innerHTML = html;
+    let elementsp = document.getElementsByClassName('counterp');
+    console.log(elementsp);
+    for (let ix = 0; ix < elementsp.length; ix++) {
+        elementsp[ix].addEventListener('click', increase_counter);
+    }
+    let elementsa = document.getElementsByClassName('countera');
+    console.log(elementsa);
+    for (let ix = 0; ix < elementsa.length; ix++) {
+        elementsa[ix].addEventListener('click', decrease_counter);
+    }
+}
+ 
+function increase_counter(event) {
+    let name = event.target.getAttribute("data-name");
+    subjects[name][0]++;
+    subjects[name][2]++;
+    subjects[name][3] = parseFloat(subjects[name][0]/subjects[name][2]*100).toFixed(2);
+    if (subjects[name][3]>=75)
+    {
+        st="#04fc43"
+    }
+    else
+    {   
+        st="#fc0404"
+    }
+    localStorage.setItem('multi_counter', JSON.stringify(subjects));
+    
+    show_counters();
+}
+function decrease_counter(event) {
+    let name = event.target.getAttribute("data-name");
+    subjects[name][1]++;
+    subjects[name][2]++;
+    subjects[name][3] = parseFloat(subjects[name][0]/subjects[name][2]*100).toFixed(2);
+    if (subjects[name][3]>=75)
+    {
+        st="#04fc43"
+    }
+    else
+    {   
+        st="#fc0404"
+    }
+    localStorage.setItem('multi_counter', JSON.stringify(subjects));
+    
+    show_counters();
+}
+
+ 
+document.getElementById('reset_all').addEventListener('click', reset_all);
+document.getElementById('add_counter').addEventListener('click', add_counter);
+load_counters();
+show_counters();
+</script>
+</body>
+</html>
